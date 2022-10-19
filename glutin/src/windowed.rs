@@ -111,8 +111,8 @@ impl<W> ContextWrapper<PossiblyCurrent, W> {
     /// next time the screen is refreshed. However drivers can choose to
     /// override your vsync settings, which means that you can't know in
     /// advance whether `swap_buffers()` will block or not.
-    pub fn swap_buffers(&self) -> Result<(), ContextError> {
-        self.context.context.swap_buffers()
+    pub fn swap_buffers(&self, window: &Window) -> Result<(), ContextError> {
+        self.context.context.swap_buffers(window)
     }
 
     /// Swaps the buffers in case of double or triple buffering using specified
@@ -226,9 +226,10 @@ impl<T: ContextCurrentState, W> ContextWrapper<T, W> {
     /// [`treat_as_not_current()`]: Self::treat_as_not_current()
     pub unsafe fn make_current(
         self,
+        _window: &Window,
     ) -> Result<ContextWrapper<PossiblyCurrent, W>, (Self, ContextError)> {
         let window = self.window;
-        match self.context.make_current() {
+        match self.context.make_current(_window) {
             Ok(context) => Ok(ContextWrapper { window, context }),
             Err((context, err)) => Err((ContextWrapper { window, context }, err)),
         }

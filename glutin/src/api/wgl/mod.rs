@@ -17,6 +17,7 @@ use winapi::shared::windef::{HDC, HGLRC, HWND};
 use winapi::um::libloaderapi::*;
 use winapi::um::wingdi::*;
 use winapi::um::winuser::*;
+use winit::platform::windows::WindowExtWindows;
 
 use std::ffi::{CStr, CString, OsStr};
 use std::os::raw;
@@ -39,6 +40,8 @@ pub struct Context {
 
     /// The pixel format that has been used to create this context.
     pixel_format: PixelFormat,
+    /// TODO(derezzedex)
+    pixel_format_id: i32,
 }
 
 /// A simple wrapper that destroys the window when it is destroyed.
@@ -146,7 +149,7 @@ impl Context {
             }
         }
 
-        Ok(Context { context, hdc, gl_library, pixel_format })
+        Ok(Context { context, hdc, gl_library, pixel_format, pixel_format_id })
     }
 
     /// Returns the raw HGLRC.
@@ -156,8 +159,15 @@ impl Context {
     }
 
     #[inline]
-    pub unsafe fn make_current(&self) -> Result<(), ContextError> {
-        if gl::wgl::MakeCurrent(self.hdc as *const _, self.context.0 as *const _) != 0 {
+    pub unsafe fn make_current(&self, window: &winit::window::Window) -> Result<(), ContextError> {
+        let win = window.hwnd() as HWND;    
+        let hdc = GetDC(win);
+
+        if GetPixelFormat(hdc) == 0{
+            set_pixel_format(hdc, self.pixel_format_id).unwrap();
+        }
+
+        if gl::wgl::MakeCurrent(hdc as *const _, self.context.0 as *const _) != 0 {
             Ok(())
         } else {
             Err(ContextError::IoError(std::io::Error::last_os_error()))
@@ -192,14 +202,17 @@ impl Context {
     }
 
     #[inline]
-    pub fn swap_buffers(&self) -> Result<(), ContextError> {
+    pub fn swap_buffers(&self, window: &winit::window::Window) -> Result<(), ContextError> {
         // TODO: decide how to handle the error
         // if unsafe { SwapBuffers(self.hdc) } != 0 {
         // Ok(())
         // } else {
         // Err(ContextError::IoError(std::io::Error::last_os_error()))
         // }
-        unsafe { SwapBuffers(self.hdc) };
+        let win = window.hwnd() as HWND;    
+        let hdc = unsafe{ GetDC(win) };
+
+        unsafe { SwapBuffers(hdc) };
         Ok(())
     }
 

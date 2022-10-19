@@ -188,9 +188,9 @@ impl Context {
     }
 
     #[inline]
-    pub unsafe fn make_current(&self) -> Result<(), ContextError> {
+    pub unsafe fn make_current(&self, window: &Window) -> Result<(), ContextError> {
         match *self {
-            Context::Wgl(ref c) | Context::HiddenWindowWgl(_, ref c) => c.make_current(),
+            Context::Wgl(ref c) | Context::HiddenWindowWgl(_, ref c) => c.make_current(window),
             Context::Egl(ref c)
             | Context::HiddenWindowEgl(_, ref c)
             | Context::EglPbuffer(ref c) => c.make_current(),
@@ -236,9 +236,9 @@ impl Context {
     }
 
     #[inline]
-    pub fn swap_buffers(&self) -> Result<(), ContextError> {
+    pub fn swap_buffers(&self, window: &Window) -> Result<(), ContextError> {
         match *self {
-            Context::Wgl(ref c) => c.swap_buffers(),
+            Context::Wgl(ref c) => c.swap_buffers(window),
             Context::Egl(ref c) => c.swap_buffers(),
             _ => unreachable!(),
         }

@@ -34,8 +34,8 @@ pub struct Context<T: ContextCurrentState> {
 
 impl<T: ContextCurrentState> Context<T> {
     /// See [`ContextWrapper::make_current()`].
-    pub unsafe fn make_current(self) -> Result<Context<PossiblyCurrent>, (Self, ContextError)> {
-        match self.context.make_current() {
+    pub unsafe fn make_current(self, window: &winit::window::Window) -> Result<Context<PossiblyCurrent>, (Self, ContextError)> {
+        match self.context.make_current(window) {
             Ok(()) => Ok(Context { context: self.context, phantom: PhantomData }),
             Err(err) => Err((Context { context: self.context, phantom: PhantomData }, err)),
         }
