@@ -12,6 +12,7 @@ use cocoa::foundation::NSAutoreleasePool;
 use core_foundation::base::TCFType;
 use core_foundation::bundle::{CFBundleGetBundleWithIdentifier, CFBundleGetFunctionPointerForName};
 use core_foundation::string::CFString;
+use objc::rc::autoreleasepool;
 use objc::runtime::{BOOL, NO};
 
 use crate::platform::macos::WindowExtMacOS;
@@ -182,11 +183,14 @@ impl Context {
     }
 
     #[inline]
-    pub unsafe fn make_current(&self) -> Result<(), ContextError> {
+    pub unsafe fn make_current(&self, window: &Window) -> Result<(), ContextError> {
         match *self {
             Context::WindowedContext(ref c) => {
-                let _: () = msg_send![*c.context, update];
-                c.context.makeCurrentContext();
+                autoreleasepool(|| {
+                    c.context.update();
+                    c.context.makeCurrentContext();
+                    c.context.setView_(window.ns_view() as *mut _);
+                });
             }
             Context::HeadlessContext(ref c) => {
                 let _: () = msg_send![*c.context, update];
@@ -246,7 +250,7 @@ impl Context {
     }
 
     #[inline]
-    pub fn swap_buffers(&self) -> Result<(), ContextError> {
+    pub fn swap_buffers(&self, _window: &Window) -> Result<(), ContextError> {
         unsafe {
             match *self {
                 Context::WindowedContext(ref c) => {
